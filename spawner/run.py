@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 
-
-import sys
-import logging
-from eventhubs import EventHubClient, Receiver, Offset
-from config import ADDRESS, azure_context
-
-from utilities import AzureContext
+from config import ADDRESS, queueConf, azure_context, AzureContext
+from azure.servicebus import ServiceBusService, Message, Queue
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, Port, IpAddress, 
@@ -15,32 +10,32 @@ from azure.mgmt.containerinstance.models import (ContainerGroup, Container, Cont
 resource_client = ResourceManagementClient(azure_context.credentials, azure_context.subscription_id)
 client = ContainerInstanceManagementClient(azure_context.credentials, azure_context.subscription_id)
 
-class MyReceiver(Receiver):
-    def __init__(self, partition):
-        super(MyReceiver, self).__init__()
-        self.partition = partition
-        self.total = 0
-        self.last_sn = -1
-        self.last_offset = "-1"
+bus_service = ServiceBusService(
+    service_namespace = queueConf['service_namespace'],
+    shared_access_key_name = queueConf['saskey_name'],
+    shared_access_key_value = queueConf['saskey_value'])
 
-    def on_event_data(self, event_data):
-        self.last_offset = event_data.offset
-        self.last_sn = event_data.sequence_number
-        self.total += 1
-        print("Partition", self.partition, "Received ", self.total," sn=",self.last_sn," offset=",self.last_offset)
 
-# try:
-#     CONSUMER_GROUP = "$default"
-#     OFFSET = Offset("-1")
 
-#     EventHubClient(ADDRESS if len(sys.argv) == 1 else sys.argv[1]) \
-#         .subscribe(MyReceiver("0"), CONSUMER_GROUP, "0", OFFSET) \
-#         .run()
+RESOURCE_GROUP = "Test"
+LOCATION = "westus"
+BASE_NAME = "worker-"
+IMAGE = "nginx"
 
-# except KeyboardInterrupt:
-#     pass
 
-def create_container_group(resource_group_name, name, location, image, memory, cpu):
+
+#create_container_group(RESOURCE_GROUP, BASE_NAME + str(self.worker_count), LOCATION, IMAGE, )
+
+def main():
+    print("Starting Work Cycle...")
+    try:
+        msg = bus_service.receive_queue_message(queueConf['queue_name'], peek_lock=False)
+        print(msg.body)
+    except KeyboardInterrupt:
+        pass
+
+
+def create_container_group(resource_group_name, name, location, image, msg):
 
    # setup default values
    port = 80
@@ -49,7 +44,7 @@ def create_container_group(resource_group_name, name, location, image, memory, c
    environment_variables = None
 
    # set memory and cpu
-   container_resource_requests = ResourceRequests(memory_in_gb = memory, cpu = cpu)
+   container_resource_requests = ResourceRequests(memory_in_gb = 3.5, cpu = 2)
    container_resource_requirements = ResourceRequirements(requests = container_resource_requests)
    
    container = Container(name = name,
@@ -73,4 +68,5 @@ def create_container_group(resource_group_name, name, location, image, memory, c
    client.container_groups.create_or_update(resource_group_name, name, cgroup)
 
 
-create_container_group("aciherodemo", "test1", "West US", "nginx", 1, 1)
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,4 @@
+azure-common==1.1.8
+azure.servicebus
+flask
+jsonify
