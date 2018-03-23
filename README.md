@@ -1,6 +1,6 @@
 # Even Driven ACI
 
-#### YOU have things to be computed?!?
+#### Do YOU have things to be computed?!?
 
 #### Do YOU wish they were computed?!?
 
