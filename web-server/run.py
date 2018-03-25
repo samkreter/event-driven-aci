@@ -14,16 +14,37 @@ SUCCESS = Response(json.dumps({'success':True}), status=200, mimetype='applicati
 
 app = Flask(__name__)
 
+state = []
+
 @app.route('/')
 def index():
-
-    return SUCCESS
+    return render_template('index.html')
 
 @app.route('/sendwork', methods=['POST'])
 def sendwork():
-    work = request.form.get('work'))
+    work = request.form.get('work')
     bus_service.send_queue_message('taskqueue', work)
     return SUCCESS
+
+@app.route('/udatestate', methods=['PUT'])
+def updatestate():
+    new_state = request.get_json()
+
+    for container in state:
+        if container['name'] == new_state['name']:
+            container.update(new_state)
+            return SUCCESS
+
+    state.append(new_state)
+    return SUCCESS
+
+def getRequest(url):
+    try:
+        res = requests.get(url)
+        return json.loads(res.text)
+    except:
+        return False
+
 
 
 if __name__ == '__main__':
