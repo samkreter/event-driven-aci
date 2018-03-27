@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
-from config import ADDRESS, queueConf, azure_context, AzureContext
+import random
+import string
+from collections import deque
+from config import queueConf, azure_context
 from azure.servicebus import ServiceBusService, Message, Queue
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
-from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, Port, IpAddress, 
+from azure.mgmt.containerinstance.models import (ContainerGroup, Container, ContainerPort, Port, IpAddress, EnvironmentVariable,
                                                  ResourceRequirements, ResourceRequests, ContainerGroupNetworkProtocol, OperatingSystemTypes)
 
 resource_client = ResourceManagementClient(azure_context.credentials, azure_context.subscription_id)
@@ -19,9 +22,16 @@ bus_service = ServiceBusService(
 
 RESOURCE_GROUP = "Test"
 LOCATION = "westus"
-BASE_NAME = "worker-"
-IMAGE = "nginx"
+BASE_NAMES = deque(["anders", "wenjun", "robbie", "robin", "allen", "tony", "xiaofeng", "tingting", "harry", "chen"])
+NAMES_COUNTER = 0
+IMAGE = "pskreter/worker-container:latest"
 
+
+def create_env_vars(msg, webserver_ip):
+    msg_var = EnvironmentVariable(name = "MESSAGE", value = msg)
+    webserver_var = EnvironmentVariable(name = "WEB_SERVER", value = webserver_ip)
+    
+    return [msg_var, webserver_var]
 
 
 #create_container_group(RESOURCE_GROUP, BASE_NAME + str(self.worker_count), LOCATION, IMAGE, )
@@ -30,42 +40,48 @@ def main():
     print("Starting Work Cycle...")
     try:
         msg = bus_service.receive_queue_message(queueConf['queue_name'], peek_lock=False)
-        print(msg.body)
+        env_vars = create_env_vars(msg.body, "TODO")
+        container_name = get_container_name()
+        create_container_group(RESOURCE_GROUP, container_name, LOCATION, IMAGE, env_vars)
     except KeyboardInterrupt:
         pass
 
+def get_container_name():
+    random_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(7))
+    name = BASE_NAMES.popleft()
+    BASE_NAMES.append(name)
+    return name + "-" + random_string
 
-def create_container_group(resource_group_name, name, location, image, msg):
+def create_container_group(resource_group_name, name, location, image, env_vars):
 
-   # setup default values
-   port = 80
-   container_resource_requirements = None
-   command = None
-   environment_variables = None
+    # setup default values
+    port = 80
+    container_resource_requirements = None
+    command = None
 
-   # set memory and cpu
-   container_resource_requests = ResourceRequests(memory_in_gb = 3.5, cpu = 2)
-   container_resource_requirements = ResourceRequirements(requests = container_resource_requests)
-   
-   container = Container(name = name,
-                         image = image,
-                         resources = container_resource_requirements,
-                         command = command,
-                         ports = [ContainerPort(port=port)],
-                         environment_variables = environment_variables)
+    # set memory and cpu
+    container_resource_requests = ResourceRequests(memory_in_gb = 3.5, cpu = 2)
+    container_resource_requirements = ResourceRequirements(requests = container_resource_requests)
 
-   # defaults for container group
-   cgroup_os_type = OperatingSystemTypes.linux
-   cgroup_ip_address = IpAddress(ports = [Port(protocol=ContainerGroupNetworkProtocol.tcp, port = port)])
-   image_registry_credentials = None
+    container = Container(name = name,
+                        image = image,
+                        resources = container_resource_requirements,
+                        command = command,
+                        ports = [ContainerPort(port=port)],
+                        environment_variables = env_vars)
 
-   cgroup = ContainerGroup(location = location,
-                           containers = [container],
-                           os_type = cgroup_os_type,
-                           ip_address = cgroup_ip_address,
-                           image_registry_credentials = image_registry_credentials)
+    # defaults for container group
+    cgroup_os_type = OperatingSystemTypes.linux
+    cgroup_ip_address = IpAddress(ports = [Port(protocol=ContainerGroupNetworkProtocol.tcp, port = port)])
+    image_registry_credentials = None
 
-   client.container_groups.create_or_update(resource_group_name, name, cgroup)
+    cgroup = ContainerGroup(location = location,
+                        containers = [container],
+                        os_type = cgroup_os_type,
+                        ip_address = cgroup_ip_address,
+                        image_registry_credentials = image_registry_credentials)
+
+    client.container_groups.create_or_update(resource_group_name, name, cgroup)
 
 
 if __name__ == '__main__':

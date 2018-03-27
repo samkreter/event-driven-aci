@@ -22,12 +22,17 @@ def index():
 
 @app.route('/sendwork', methods=['POST'])
 def sendwork():
-    work = request.form.get('work')
-    bus_service.send_queue_message('taskqueue', work)
+    work = request.get_json()['work']
+    
+    bus_service.send_queue_message(queueConf['queue_name'], Message(work))
     return SUCCESS
 
-@app.route('/udatestate', methods=['PUT'])
-def updatestate():
+@app.route('/currentstate', methods=['GET'])
+def current_state():
+    return json.dumps({"containers": state})
+
+@app.route('/updatestate', methods=['PUT'])
+def update_state():
     new_state = request.get_json()
 
     for container in state:
