@@ -1,24 +1,30 @@
 #!/usr/bin/env python
 
-from config import queueConf
+from config import queueConf, DATABASE_URI
 from azure.servicebus import ServiceBusService, Message, Queue
 from flask import Flask, render_template, request, Response
 import json
+from pymongo import MongoClient
 
+#set up the service bus queue
 bus_service = ServiceBusService(
     service_namespace = queueConf['service_namespace'],
     shared_access_key_name = queueConf['saskey_name'],
     shared_access_key_value = queueConf['saskey_value'])
 
+#Connect to the databases
+client = MongoClient(DATABASE_URI)
+db = client.containerstate
+
+#Preset respones
 SUCCESS = Response(json.dumps({'success':True}), status=200, mimetype='application/json')
 
 app = Flask(__name__)
 
-state = []
-
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/sendwork', methods=['POST'])
 def sendwork():
@@ -27,21 +33,23 @@ def sendwork():
     bus_service.send_queue_message(queueConf['queue_name'], Message(work))
     return SUCCESS
 
+
 @app.route('/currentstate', methods=['GET'])
 def current_state():
-    return json.dumps({"containers": state})
+    #Get all container states
+    container_states = db.containerstate.find({})
 
-@app.route('/updatestate', methods=['PUT'])
-def update_state():
-    new_state = request.get_json()
+    current_states = []
 
-    for container in state:
-        if container['name'] == new_state['name']:
-            container.update(new_state)
-            return SUCCESS
+    #Convert to list of state objects
+    for state in container_states:
+        current_states.append({
+            "name": state['name'],
+            "state": state['state']
+        })
 
-    state.append(new_state)
-    return SUCCESS
+    return json.dumps({"container_states": current_states})
+
 
 def getRequest(url):
     try:
