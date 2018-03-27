@@ -47,71 +47,7 @@
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
-            <div id="container-wrapper" class="row">
-                <div id="sam1" class="col-lg-1 col-md-2 .aci-instance">
-                    <div class="panel panel-primary">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <i class="fa fa-comments fa-5x"></i>
-                                </div>
-                                <div>
-                                    <div >Anders-7</div>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="#">
-                            <div class="panel-footer">
-                                <span class="pull-left">View Details</span>
-                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
-                                <div class="clearfix"></div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div id="sam2" class="col-lg-1 col-md-2 .aci-instance">
-                    <div class="panel panel-green">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <i class="fa fa-tasks fa-5x"></i>
-                                </div>
-                                <div>
-                                    <div>12</div>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="#">
-                            <div class="panel-footer">
-                                <span id="sam33" class="pull-left aci-instance">View Details</span>
-                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
-                                <div class="clearfix"></div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="col-lg-1 col-md-2">
-                    <div class="panel panel-yellow">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <i class="fa fa-shopping-cart fa-5x"></i>
-                                </div>
-                                <div>
-                                    <div>124</div>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="#">
-                            <div class="panel-footer">
-                                <span id="sam1" class="pull-left aci-instance">View Details</span>
-                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
-                                <div class="clearfix"></div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
+            <div id="container-wrapper" class="row"></div>
             <!-- /.row -->
             <div class="row">
                 <div class="col-lg-8">
@@ -578,31 +514,34 @@
 
         $(function () {
 
-            // Query homebase for the current state of the instances
-            // setInterval(function () {
-            //     $.get("/currentstate", function (data) {
-                    
-            //         container_states = $.parseJSON(data)['container_states'];
-                    
-            //         for (var i = 0; i < container_states.length; i++) {
-            //             //Update current state
-            //             container_name = container_states[i].name
-            //             $("#container-wrapper").append(GetContainerBox(container_name))
-            //         }
-            //     });
-            // }, 30000)
 
-            $.get("/currentstate", function (data) {
+            var current_state = new Map()
+
+            // Query homebase for the current state of the instances
+            setInterval(function () {
+                $.get("/currentstate", function (data) {
                     
                     container_states = $.parseJSON(data)['container_states'];
                     
                     for (var i = 0; i < container_states.length; i++) {
                         //Update current state
                         container_name = container_states[i].name
-                        $("#container-wrapper").append(GetContainerBox(container_name))
+                        container_state = container_states[i].state
+
+                        console.log(current_state)
+
+                        if (current_state.has(container_name)){
+                            $("#"+container_name + " > div").removeClass("panel-primary").addClass("panel-green")
+                        }
+                        else{
+                            $("#container-wrapper").append(GetContainerBox(container_name))
+                            current_state.set(container_name, "container_state")
+                        }
                     }
                 });
+            }, 5000)
 
+        
             // $("#container-wrapper").append(GetContainerBox("sam-test-1"))
 
             
@@ -619,26 +558,26 @@
 
         function GetContainerBox(name){
             return `<div id="` + name + `" class="col-lg-1 col-md-2">
-                    <div class="panel panel-primary">
-                        <div class="panel-heading">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <i class="fa fa-comments fa-5x"></i>
-                                </div>
-                                <div>
-                                    <div >` + name + `</div>
+                        <div class="panel panel-primary">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-3">
+                                        <i class="fa fa-comments fa-5x"></i>
+                                    </div>
+                                    <div>
+                                        <div >` + name + `</div>
+                                    </div>
                                 </div>
                             </div>
+                            <a href="#">
+                                <div class="panel-footer">
+                                    <span id="` + name + `-modal" class="pull-left aci-instance">View Details</span>
+                                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                                    <div class="clearfix"></div>
+                                </div>
+                            </a>
                         </div>
-                        <a href="#">
-                            <div class="panel-footer">
-                                <span id="` + name + `-modal" class="pull-left aci-instance">View Details</span>
-                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
-                                <div class="clearfix"></div>
-                            </div>
-                        </a>
-                    </div>
-                </div>`
+                    </div>`
         }
 
     </script>
