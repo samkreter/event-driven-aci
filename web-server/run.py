@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
-from config import queueConf, DATABASE_URI
+from config import DATABASE_URI
+#from config import queueConf, DATABASE_URI
 from azure.servicebus import ServiceBusService, Message, Queue
 from flask import Flask, render_template, request, Response
 import json
 from pymongo import MongoClient
 
 #set up the service bus queue
-bus_service = ServiceBusService(
-    service_namespace = queueConf['service_namespace'],
-    shared_access_key_name = queueConf['saskey_name'],
-    shared_access_key_value = queueConf['saskey_value'])
+# bus_service = ServiceBusService(
+#     service_namespace = queueConf['service_namespace'],
+#     shared_access_key_name = queueConf['saskey_name'],
+#     shared_access_key_value = queueConf['saskey_value'])
 
 #Connect to the databases
 client = MongoClient(DATABASE_URI)
@@ -26,12 +27,12 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/sendwork', methods=['POST'])
-def sendwork():
-    work = request.get_json()['work']
+# @app.route('/sendwork', methods=['POST'])
+# def sendwork():
+#     work = request.get_json()['work']
     
-    bus_service.send_queue_message(queueConf['queue_name'], Message(work))
-    return SUCCESS
+#     bus_service.send_queue_message(queueConf['queue_name'], Message(work))
+#     return SUCCESS
 
 
 @app.route('/currentstate', methods=['GET'])
@@ -57,7 +58,6 @@ def getRequest(url):
         return json.loads(res.text)
     except:
         return False
-
 
 
 if __name__ == '__main__':
