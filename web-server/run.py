@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from config import queueConf, DATABASE_URI
+from config import queueConf, DATABASE_URI, ACI_CONFIG
 from azure.servicebus import ServiceBusService, Message, Queue
 from flask import Flask, render_template, request, Response
 import json
@@ -60,11 +60,17 @@ def current_state():
 
     return json.dumps({"container_states": current_states})
 
+# @app.route('/api/metrics/<container_name>', methods=['GET'])
+# def get_metrics(container_name):
+#     uri = get_metrics_uri(ACI_CONFIG['subscriptionId'], ACI_CONFIG['resourceGroup'], container_name)
 
 @app.route('/admin/currentdbstate', methods=['GET'])
 def current_db_state():
     db_state = db.containerstate.find({})
     return dumps({"db_state": list(db_state)})
+
+def get_metrics_uri(subscirption_id, resource_group_name, container_name):
+    return "https://management.azure.com/subscriptions/" + subscription_id + "/resourceGroups/" + resource_group_name + "/providers/microsoft.containerinstance/containerGroups/" + container_name + "/providers/microsoft.insights/metrics?api-version=2017-12-01-preview&metricnames=CpuUsage,MemoryUsage"
 
 
 if __name__ == '__main__':

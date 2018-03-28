@@ -4,7 +4,7 @@ import random
 import string
 import sys
 from collections import deque
-from config import queueConf, azure_context, DATABASE_URI
+from config import queueConf, azure_context, DATABASE_URI, ACI_CONFIG
 from azure.servicebus import ServiceBusService, Message, Queue
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
@@ -22,8 +22,6 @@ bus_service = ServiceBusService(
 
 
 
-RESOURCE_GROUP = "aciherodemo"
-LOCATION = "westus"
 BASE_NAMES = deque(["anders", "wenjun", "robbie", "robin", "allen", "tony", "xiaofeng", "tingting", "harry", "chen"])
 NAMES_COUNTER = 0
 IMAGE = "pskreter/worker-container:latest"
@@ -42,7 +40,7 @@ def main():
                 env_vars = create_env_vars(work, DATABASE_URI, container_name)
                 sys.stdout.write("Creating container: " + container_name + " with work: " + work + '\n')  # same as print
                 sys.stdout.flush()
-                create_container_group(RESOURCE_GROUP, container_name, LOCATION, IMAGE, env_vars)
+                create_container_group(ACI_CONFIG['resourecGroup'], container_name, ACI_CONFIG['location'], IMAGE, env_vars)
                 
         except KeyboardInterrupt:
             pass

@@ -24,6 +24,13 @@ azure_context = AzureContext(
       tenant = ''  #Directory ID
    )
 
+#ACI Specific configurations
+ACI_CONFIG = {
+    "subscriptionId": "",
+    "resourecGroup": "",
+    "location": ""
+}
+
 #Cosmosdb mongodb api connection string
 DATABASE_URI = "" 
 
