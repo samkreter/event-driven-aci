@@ -2,6 +2,7 @@
 
 import random
 import string
+import sys
 from collections import deque
 from config import queueConf, azure_context, DATABASE_URI
 from azure.servicebus import ServiceBusService, Message, Queue
@@ -12,6 +13,7 @@ from azure.mgmt.containerinstance.models import (ContainerGroup, Container, Cont
 
 resource_client = ResourceManagementClient(azure_context.credentials, azure_context.subscription_id)
 client = ContainerInstanceManagementClient(azure_context.credentials, azure_context.subscription_id)
+
 
 bus_service = ServiceBusService(
     service_namespace = queueConf['service_namespace'],
@@ -28,14 +30,22 @@ IMAGE = "pskreter/worker-container:latest"
 
 
 def main():
-    print("Starting Work Cycle...")
-    try:
-        msg = bus_service.receive_queue_message(queueConf['queue_name'], peek_lock=False)
-        container_name = get_container_name()
-        env_vars = create_env_vars(msg.body, DATABASE_URI, container_name)
-        create_container_group(RESOURCE_GROUP, container_name, LOCATION, IMAGE, env_vars)
-    except KeyboardInterrupt:
-        pass
+    sys.stdout.write("Starting Work Cycle...\n")  # same as print
+    sys.stdout.flush()
+    while True:
+        try:
+            msg = bus_service.receive_queue_message(queueConf['queue_name'], peek_lock=False)
+            if msg.body is not None:
+                work = msg.body.decode("utf-8")
+
+                container_name = get_container_name()
+                env_vars = create_env_vars(work, DATABASE_URI, container_name)
+                sys.stdout.write("Creating container: " + container_name + " with work: " + work + '\n')  # same as print
+                sys.stdout.flush()
+                create_container_group(RESOURCE_GROUP, container_name, LOCATION, IMAGE, env_vars)
+                
+        except KeyboardInterrupt:
+            pass
 
 
 def create_env_vars(msg, database_uri, container_name):

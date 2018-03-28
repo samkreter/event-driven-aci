@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 
-from config import DATABASE_URI
-#from config import queueConf, DATABASE_URI
+from config import queueConf, DATABASE_URI
 from azure.servicebus import ServiceBusService, Message, Queue
 from flask import Flask, render_template, request, Response
 import json
 from pymongo import MongoClient
 
 #set up the service bus queue
-# bus_service = ServiceBusService(
-#     service_namespace = queueConf['service_namespace'],
-#     shared_access_key_name = queueConf['saskey_name'],
-#     shared_access_key_value = queueConf['saskey_value'])
+bus_service = ServiceBusService(
+    service_namespace = queueConf['service_namespace'],
+    shared_access_key_name = queueConf['saskey_name'],
+    shared_access_key_value = queueConf['saskey_value'])
 
 #Connect to the databases
 client = MongoClient(DATABASE_URI)
@@ -27,12 +26,21 @@ def index():
     return render_template('index.html')
 
 
-# @app.route('/sendwork', methods=['POST'])
-# def sendwork():
-#     work = request.get_json()['work']
-    
-#     bus_service.send_queue_message(queueConf['queue_name'], Message(work))
-#     return SUCCESS
+@app.route('/sendwork', methods=['POST'])
+def sendwork():
+    work = request.get_json()['work']
+
+    print("Creating job with work: ", work)
+
+    bus_service.send_queue_message(queueConf['queue_name'], Message(work))
+    return SUCCESS
+
+
+@app.route('/clear', methods=['PUT'])
+def clear():
+    print("clearing database")
+    db.containerstate.delete_many({})
+    return SUCCESS
 
 
 @app.route('/currentstate', methods=['GET'])
@@ -52,13 +60,5 @@ def current_state():
     return json.dumps({"container_states": current_states})
 
 
-def getRequest(url):
-    try:
-        res = requests.get(url)
-        return json.loads(res.text)
-    except:
-        return False
-
-
 if __name__ == '__main__':
-    app.run(debug=True,host='0.0.0.0',port=8000)
+    app.run(host='0.0.0.0',port=8000)
