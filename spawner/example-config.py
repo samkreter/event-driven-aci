@@ -27,7 +27,7 @@ azure_context = AzureContext(
 #ACI Specific configurations
 ACI_CONFIG = {
     "subscriptionId": "",
-    "resourecGroup": "",
+    "resourceGroup": "",
     "location": ""
 }
 

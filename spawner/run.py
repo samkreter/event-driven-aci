@@ -40,7 +40,7 @@ def main():
                 env_vars = create_env_vars(work, DATABASE_URI, container_name)
                 sys.stdout.write("Creating container: " + container_name + " with work: " + work + '\n')  # same as print
                 sys.stdout.flush()
-                create_container_group(ACI_CONFIG['resourecGroup'], container_name, ACI_CONFIG['location'], IMAGE, env_vars)
+                create_container_group(ACI_CONFIG['resourceGroup'], container_name, ACI_CONFIG['location'], IMAGE, env_vars)
                 
         except KeyboardInterrupt:
             pass

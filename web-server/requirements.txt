@@ -1,5 +1,7 @@
 azure-common==1.1.8
 azure.servicebus
+azure.monitor
 flask
 jsonify
+bson
 pymongo
