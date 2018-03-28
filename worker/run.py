@@ -1,12 +1,32 @@
 #!/usr/bin/env python
 import os
+from pymongo import MongoClient
 
 def main():
     msg = os.environ['MESSAGE']
-    web_server = os.environ['WEB_SERVER']
+    container_name = os.environ['CONTAINER_NAME']
+    mongo_uri = os.environ['DATABASE_URI']
 
-    print("mesg: ", msg)
-    print("server: ", web_server)
+    client = MongoClient(mongo_uri)
 
-if __name__ == '__main__':
-    main()
+    #Does not have to already exist
+    db=client.containerstate
+
+    #Create Container State
+
+    new_state = {
+        "name": container_name,
+        "state": "Inprogress"
+    }
+
+    db.containerstate.insert_one(new_state)
+
+    #Do some work
+    time.sleep(20)
+
+    #Updating State
+    db.containerstate.update_one({'name': container_name}, { '$set': {"state": "Done"}})
+
+
+
+

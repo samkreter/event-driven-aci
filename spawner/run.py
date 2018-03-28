@@ -3,7 +3,7 @@
 import random
 import string
 from collections import deque
-from config import queueConf, azure_context
+from config import queueConf, azure_context, DATABASE_URI
 from azure.servicebus import ServiceBusService, Message, Queue
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
@@ -20,37 +20,38 @@ bus_service = ServiceBusService(
 
 
 
-RESOURCE_GROUP = "Test"
+RESOURCE_GROUP = "aciherodemo"
 LOCATION = "westus"
 BASE_NAMES = deque(["anders", "wenjun", "robbie", "robin", "allen", "tony", "xiaofeng", "tingting", "harry", "chen"])
 NAMES_COUNTER = 0
 IMAGE = "pskreter/worker-container:latest"
 
 
-def create_env_vars(msg, webserver_ip):
-    msg_var = EnvironmentVariable(name = "MESSAGE", value = msg)
-    webserver_var = EnvironmentVariable(name = "WEB_SERVER", value = webserver_ip)
-    
-    return [msg_var, webserver_var]
-
-
-#create_container_group(RESOURCE_GROUP, BASE_NAME + str(self.worker_count), LOCATION, IMAGE, )
-
 def main():
     print("Starting Work Cycle...")
     try:
         msg = bus_service.receive_queue_message(queueConf['queue_name'], peek_lock=False)
-        env_vars = create_env_vars(msg.body, "TODO")
         container_name = get_container_name()
+        env_vars = create_env_vars(msg.body, DATABASE_URI, container_name)
         create_container_group(RESOURCE_GROUP, container_name, LOCATION, IMAGE, env_vars)
     except KeyboardInterrupt:
         pass
+
+
+def create_env_vars(msg, database_uri, container_name):
+    msg_var = EnvironmentVariable(name = "MESSAGE", value = msg)
+    database_var = EnvironmentVariable(name = "DATABASE_URI", value = database_uri)
+    container_name_var = EnvironmentVariable(name = "CONTAINER_NAME", value = container_name)
+
+    return [msg_var, database_var, container_name_var]
+
 
 def get_container_name():
     random_string = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(7))
     name = BASE_NAMES.popleft()
     BASE_NAMES.append(name)
     return name + "-" + random_string
+
 
 def create_container_group(resource_group_name, name, location, image, env_vars):
 
