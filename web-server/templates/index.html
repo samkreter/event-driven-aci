@@ -113,13 +113,9 @@
 
         $(function () {
 
-
+            //Save the current state of affairs 
             var current_state = new Map()
 
-            var state_mapper = {
-                "InProgress": "panel-primary",
-                "Done": "panel-green"
-            }
 
             // Query homebase for the current state of the instances
             setInterval(function () {
@@ -128,6 +124,7 @@
                     container_states = $.parseJSON(data)['container_states'];
                     
                     for (var i = 0; i < container_states.length; i++) {
+
                         //Update current state
                         container_name = container_states[i].name
                         container_state = container_states[i].state
@@ -143,6 +140,7 @@
                 });
             }, 1000)
 
+            // Add new work to the queue
             $("#sumbit-work").click(function(event){
                 var text = $("#input-work").val()
                 $("#input-work").val('')
@@ -161,6 +159,7 @@
                 });
             })
 
+            // Clear the current state from Cosmos
             $("#sumbit-refresh").click(function(event){
                 $.ajax({
                     type: "PUT",
@@ -170,7 +169,7 @@
             })
             
             //Set up model with monitoring metrics for the individule ACI
-            $(".aci-instance").click(function (event) {
+            $("#container-wrapper").on('click', ".aci-instance", function (event) {
                 $('#details-model').modal('toggle');
                 //Update chart data for the specific instance found with 'event.target.id'
             });
