@@ -5,6 +5,7 @@ from azure.servicebus import ServiceBusService, Message, Queue
 from flask import Flask, render_template, request, Response
 import json
 from pymongo import MongoClient
+from bson.json_util import dumps
 
 #set up the service bus queue
 bus_service = ServiceBusService(
@@ -58,6 +59,12 @@ def current_state():
         })
 
     return json.dumps({"container_states": current_states})
+
+
+@app.route('/admin/currentdbstate', methods=['GET'])
+def current_db_state():
+    db_state = db.containerstate.find({})
+    return dumps({"db_state": list(db_state)})
 
 
 if __name__ == '__main__':
