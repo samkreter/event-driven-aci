@@ -79,7 +79,8 @@
                     <div class="panel panel-default">
                         <!-- /.panel-heading -->
                         <div class="panel-body">
-                            <!-- <div id="details-chart"></div> -->
+                            <canvas id="myChart" width="400" height="400"></canvas>
+
                         </div>
                         <!-- /.panel-body -->
                     </div>
@@ -107,6 +108,48 @@
     <script src="/static/vendor/morrisjs/morris.min.js"></script>
     <script src="/static/data/morris-data.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
+
+
+    <script>
+        var ctx = document.getElementById("myChart").getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+                datasets: [{
+                    label: '# of Votes',
+                    data: [12, 19, 3, 5, 2, 3],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255,99,132,1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero:true
+                        }
+                    }]
+                }
+            }
+        });
+        </script>
 
     <script>
 
@@ -116,7 +159,7 @@
             //Save the current state of affairs 
             var current_state = new Map()
 
-
+            
             // Query homebase for the current state of the instances
             setInterval(function () {
                 $.get("/currentstate", function (data) {
@@ -130,6 +173,10 @@
                         container_state = container_states[i].state
 
                         if (current_state.has(container_name)){
+                            console.log(container_state)
+                            console.log(ConvertStateToPanel(container_state))
+                            console.log(current_state.get(container_name))
+                            console.log("##################")
                             $("#"+container_name + " > div").removeClass(current_state.get(container_name)).addClass(ConvertStateToPanel(container_state))
                         }
                         else{
@@ -167,12 +214,105 @@
                 })
                 $("#container-wrapper").empty()
             })
-            
+        
+
+            var chartData = [{
+                    period: '2010 Q1',
+                    iphone: 2666,
+                    ipad: null,
+                    itouch: 2647
+                }, {
+                    period: '2010 Q2',
+                    iphone: 2778,
+                    ipad: 2294,
+                    itouch: 2441
+                }, {
+                    period: '2010 Q3',
+                    iphone: 4912,
+                    ipad: 1969,
+                    itouch: 2501
+                }, {
+                    period: '2010 Q4',
+                    iphone: 3767,
+                    ipad: 3597,
+                    itouch: 5689
+                }, {
+                    period: '2011 Q1',
+                    iphone: 6810,
+                    ipad: 1914,
+                    itouch: 2293
+                }, {
+                    period: '2011 Q2',
+                    iphone: 5670,
+                    ipad: 4293,
+                    itouch: 1881
+                }, {
+                    period: '2011 Q3',
+                    iphone: 4820,
+                    ipad: 3795,
+                    itouch: 1588
+                }, {
+                    period: '2011 Q4',
+                    iphone: 15073,
+                    ipad: 5967,
+                    itouch: 5175
+                }, {
+                    period: '2012 Q1',
+                    iphone: 10687,
+                    ipad: 4460,
+                    itouch: 2028
+                }, {
+                    period: '2012 Q2',
+                    iphone: 8432,
+                    ipad: 5713,
+                    itouch: 1791
+                }]
+
+
             //Set up model with monitoring metrics for the individule ACI
             $("#container-wrapper").on('click', ".aci-instance", function (event) {
+                // console.log(current_state)
                 $('#details-model').modal('toggle');
+
+                $('#details-chart').empty()
+
+                var testChart = Morris.Area({
+                    element: 'details-chart',
+                    data: chartData,
+                    xkey: 'period',
+                    ykeys: ['iphone', 'ipad', 'itouch'],
+                    labels: ['iPhone', 'iPad', 'iPod Touch'],
+                    pointSize: 2,
+                    hideHover: 'auto',
+                    resize: true
+                });
                 //Update chart data for the specific instance found with 'event.target.id'
             });
+
+
+            // var chart = Morris.Line({
+            //     // ID of the element in which to draw the chart.
+            //     element: 'details-chart',
+            //     // Chart data records -- each entry in this array corresponds to a point on
+            //     // the chart.
+            //     data: [
+            //         { year: '2008', value: 20 },
+            //         { year: '2009', value: 10 },
+            //         { year: '2010', value: 5 },
+            //         { year: '2011', value: 5 },
+            //         { year: '2012', value: 20 }
+            //     ],
+            //     // The name of the data record attribute that contains x-values.
+            //     xkey: 'year',
+            //     // A list of names of data record attributes that contain y-values.
+            //     ykeys: ['value'],
+
+            //     redraw: true,
+            //     // Labels for the ykeys -- will be displayed when you hover over the
+            //     // chart.
+            //     labels: ['Value']
+            // });
+
         });
 
 
