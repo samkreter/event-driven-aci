@@ -81,7 +81,7 @@ func main() {
 	}
 
 	//Pretend to do work
-	time.Sleep(time.Second * 30)
+	time.Sleep(time.Second * 10)
 
 	//Finished the work
 	c.Update(bson.M{"name": containerName}, bson.M{"$set": bson.M{"state": "Done"}})

@@ -160,7 +160,6 @@
                 $.get("/currentstate", function (data) {
                     
                     container_states = $.parseJSON(data)['container_states'];
-                    
                     for (var i = 0; i < container_states.length; i++) {
 
                         //Update current state
@@ -171,7 +170,7 @@
                             $("#"+container_name + " > div").removeClass(current_state.get(container_name)).addClass(ConvertStateToPanel(container_state))
                         }
                         else{
-                            $("#container-wrapper").append(GetContainerBox(container_name, ConvertStateToPanel(container_state)))
+                            UpdateDefaultContainer(container_name, ConvertStateToPanel(container_state))
                             current_state.set(container_name, ConvertStateToPanel(container_state))
                         }
                     }
@@ -183,7 +182,6 @@
                 var text = $("#input-work").val()
                 $("#input-work").val('')
                 
-
                 $.ajax({
                     type: "POST",
                     url: "/sendwork",
@@ -195,6 +193,9 @@
                         alert("Failed to Add to Queue");
                     }
                 });
+
+                //Set the default container to wait for InProgress to start
+                $("#container-wrapper").append(GetDefaultContainerBox())
             })
 
             // Clear the current state from Cosmos
@@ -217,6 +218,26 @@
 
         });
 
+        function UpdateDefaultContainer(containerName, panelState){
+            //No default container around, just make a standard one
+            if ($(".default-container").length == 0){
+                $("#container-wrapper").append(GetContainerBox(containerName, panelState))
+                return
+            }
+            
+            var defaultContainer = $(".default-container").first()
+            
+            defaultContainer.removeClass("default-container")
+            
+            console.log(containerName, "- ", panelState)
+            
+            //Replace the default with the known values
+            defaultContainer.attr('id', containerName)
+            defaultContainer.find(".aci-instance").attr('id', containerName + "-modal")
+            defaultContainer.find(".name-place").text(containerName)
+            defaultContainer.children().first().removeClass("panel-yellow").addClass(panelState)
+            
+        }
 
         function ConvertStateToPanel(state){
             switch (state) {
@@ -229,6 +250,30 @@
             }
         }
 
+        function GetDefaultContainerBox() {
+                return `<div class="col-lg-2 col-md-2 default-container">
+                        <div class="panel panel-yellow">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-3">
+                                        <i class="fa fa-comments fa-5x"></i>
+                                    </div>
+                                    <div>
+                                        <div class="name-place">Pending</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="#">
+                                <div class="panel-footer">
+                                    <span  class="pull-left aci-instance">View Details</span>
+                                    <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
+                                    <div class="clearfix"></div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>`
+            }
+
         function GetContainerBox(name, panel_state){
             return `<div id="` + name + `" class="col-lg-2 col-md-2">
                         <div class="panel ` + panel_state + `">
@@ -238,7 +283,7 @@
                                         <i class="fa fa-comments fa-5x"></i>
                                     </div>
                                     <div>
-                                        <div >` + name + `</div>
+                                        <div class="name-place">` + name + `</div>
                                     </div>
                                 </div>
                             </div>
