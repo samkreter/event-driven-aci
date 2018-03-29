@@ -19,7 +19,7 @@ bus_service = ServiceBusService(
     shared_access_key_value = queueConf['saskey_value'])
 
 #Connect to the databases
-client = MongoClient(DATABASE_URI)
+client = MongoClient(DATABASE_URI + "&ssl=true")
 db = client.containerstate
 
 #Preset respones
@@ -124,4 +124,4 @@ def _get_metrics(subscription_id, resource_group_name, container_name):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0',port=8000)
+    app.run(host='0.0.0.0',port=8000)

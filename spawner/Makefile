@@ -1,11 +1,11 @@
 build:
-	docker build -t spawner .
+	docker build -t pskreter/spawner:latest .
 
 push:
-	docker push spawner:latest
+	docker push pskreter/spawner:latest
 	
 run:
-	docker run --rm --name spawner spawner
+	docker run --rm --name spawner pskreter/spawner
 
 rund:
-	docker run --rm -d --name spawner spawner
+	docker run --rm -d --name spawner pskreter/spawner

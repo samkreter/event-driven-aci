@@ -20,9 +20,6 @@
     <!-- Custom CSS -->
     <link href="/static/css/sb-admin-2.css" rel="stylesheet">
 
-    <!-- Morris Charts CSS -->
-    <link href="/static/vendor/morrisjs/morris.css" rel="stylesheet">
-
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -171,10 +168,6 @@
                         container_state = container_states[i].state
 
                         if (current_state.has(container_name)){
-                            console.log(container_state)
-                            console.log(ConvertStateToPanel(container_state))
-                            console.log(current_state.get(container_name))
-                            console.log("##################")
                             $("#"+container_name + " > div").removeClass(current_state.get(container_name)).addClass(ConvertStateToPanel(container_state))
                         }
                         else{

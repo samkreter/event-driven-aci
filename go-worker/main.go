@@ -63,11 +63,19 @@ func main() {
 
 	c := session.DB("containerstate").C("containerstate")
 
+	log.Println("Adding Recored to Databases")
+
 	//Container started the work
 	err = c.Insert(&State{
 		Name:  containerName,
 		State: "InProgress",
 	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var states []State
+	err = c.Find(bson.M{}).All(&states)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,10 +86,3 @@ func main() {
 	//Finished the work
 	c.Update(bson.M{"name": containerName}, bson.M{"$set": bson.M{"state": "Done"}})
 }
-
-// db.containerstate.insert_one(new_state)
-
-// #Do some work
-// time.sleep(20)
-
-// #Updating State
