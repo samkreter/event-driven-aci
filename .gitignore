@@ -1,5 +1,7 @@
 **/config.py
 
+go-worker/vender/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
