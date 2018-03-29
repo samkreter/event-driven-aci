@@ -5,7 +5,7 @@ brun:
 build: 
 	docker build -t pskreter/web-server:latest .
 
-push
+push:
 	docker push pskreter/web-server:latest
 
 run:

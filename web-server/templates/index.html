@@ -226,7 +226,11 @@
             }
             
             var defaultContainer = $(".default-container").first()
+            
+            defaultContainer.removeClass("default-container")
+            
             console.log(containerName, "- ", panelState)
+            
             //Replace the default with the known values
             defaultContainer.attr('id', containerName)
             defaultContainer.find(".aci-instance").attr('id', containerName + "-modal")
