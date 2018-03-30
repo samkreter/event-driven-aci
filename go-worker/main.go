@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/md5"
 	"crypto/tls"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -80,8 +82,29 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//Pretend to do work
-	time.Sleep(time.Second * 10)
+	//Perfom some hashing as work
+	stop := make(chan bool)
+
+	go func() {
+		hash := md5.New()
+
+		t := []byte("test")
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				time.Sleep(time.Second * 1)
+				for i := 0; i < 20; i++ {
+					t = hash.Sum(t)
+					fmt.Printf("%x\n", t)
+				}
+			}
+		}
+	}()
+
+	time.Sleep(time.Second * 5)
+	stop <- true
 
 	//Finished the work
 	c.Update(bson.M{"name": containerName}, bson.M{"$set": bson.M{"state": "Done"}})

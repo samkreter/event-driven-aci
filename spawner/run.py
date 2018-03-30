@@ -4,7 +4,7 @@ import random
 import string
 import sys
 from collections import deque
-from config import queueConf, azure_context, DATABASE_URI, ACI_CONFIG
+from config.config import queueConf, azure_context, DATABASE_URI, ACI_CONFIG
 from azure.servicebus import ServiceBusService, Message, Queue
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient

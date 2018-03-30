@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from config import queueConf, DATABASE_URI, ACI_CONFIG, azure_context
+from config.config import queueConf, DATABASE_URI, ACI_CONFIG, azure_context
 from azure.servicebus import ServiceBusService, Message, Queue
 from azure.monitor import MonitorClient
 from flask import Flask, render_template, request, Response
@@ -65,38 +65,35 @@ def current_state():
 
     return json.dumps({"container_states": current_states})
 
-@app.route('/api/metrics/<container_name>', methods=['GET'])
-def get_metrics(container_name):
-    # metrics = _get_metrics(ACI_CONFIG['subscriptionId'], ACI_CONFIG['resourceGroup'], container_name)
+@app.route('/admin/currentdbstate', methods=['GET'])
+def current_db_state():
+    db_state = db.containerstate.find({})
+    return dumps({"db_state": list(db_state)})
 
+
+@app.route('/api/availablemetrics/<container_name>', methods=['GET'])
+def available_metrics(container_name):
     resource_id = (
         "subscriptions/{}/"
         "resourceGroups/{}/"
         "/providers/microsoft.containerinstance/containerGroups/{}"
     ).format(ACI_CONFIG['subscriptionId'], ACI_CONFIG['resourceGroup'], container_name)
 
-    #filter = " and ".join(["name.value"])CpuUsage,MemoryUsage
-    print("hello")
-    metrics = []
-    
-    metrics_data = monitor_client.metrics.list(resource_id)
-    for item in metrics_data:
-        print(item)
-        metric = dict()
-        metric = {
-            "Name": item.name.value,
-            "Unit": item.unit.name,
-            "data": [{"time": data.time_stamp.strftime('%H:%M:%S'), "value": data.average} for data in item.data]
-        }
+    metrics = monitor_client.metric_definitions.list(resource_id)
 
-        metrics.append(metric)
+    available_metrics = [ metric.name.value for metric in metrics]
 
-    return json.dumps({"metrics": metrics})
+    return json.dumps({"available_metrics": available_metrics})
 
-@app.route('/admin/currentdbstate', methods=['GET'])
-def current_db_state():
-    db_state = db.containerstate.find({})
-    return dumps({"db_state": list(db_state)})
+
+@app.route('/api/metrics/<container_name>', methods=['GET'])
+def get_metrics(container_name):
+    metrics = _get_metrics(ACI_CONFIG['subscriptionId'], ACI_CONFIG['resourceGroup'], container_name)
+
+    print(metrics)
+
+    return json.dumps({"chartData": metrics})
+
 
 def _get_metrics(subscription_id, resource_group_name, container_name):
     resource_id = (
@@ -107,21 +104,36 @@ def _get_metrics(subscription_id, resource_group_name, container_name):
 
     #filter = " and ".join(["name.value"])CpuUsage,MemoryUsage
 
-    metrics = []
+    labels = []
+    series_labels = []
+    data_points = []
     
-    metrics_data = monitor_client.metrics.list(resource_id)
+    metrics_data = monitor_client.metrics.list(resource_id, metric='MemoryUsage')
     for item in metrics_data:
-        metric = dict()
-        metric = {
-            "Name": item.name.value,
-            "Unit": item.unit.name,
-            "data": [{"time": data.time_stamp.strftime('%H:%M:%S'), "value": data.average} for data in item.data]
-        }
+        data = list()
+        series_label = list()
 
-        metrics.append(metric)
+        labels.append(item.name.value)
 
-    return metrics
+        for data_point in item.data:
+            data.append(NoneZero(data_point.average))
+            series_label.append(data_point.time_stamp.strftime('%H:%M:%S'))
 
+        series_labels.append(series_label)
+        data_points.append(data)
+
+    return {
+        "labels": labels,
+        "seriesLabels": series_labels,
+        "dataPoints": data_points
+    }
+
+
+def NoneZero(val):
+    if val is None:
+        return 0
+    else:
+        return val
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=8000)

@@ -106,7 +106,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
 
 
-    <script>
+    <!-- <script>
         var ctx = document.getElementById("container-details-chart").getContext('2d');
         var containerDetailsChart = new Chart(ctx, {
             type: 'line',
@@ -144,7 +144,7 @@
                 }
             }
         });
-        </script>
+        </script> -->
 
     <script>
 
@@ -210,10 +210,12 @@
 
             //Set up model with monitoring metrics for the individule ACI
             $("#container-wrapper").on('click', ".aci-instance", function (event) {
-                // console.log(current_state)
+                containerName = event.target.id.replace("-modal", '')
+                $.get("/api/metrics/" + containerName, function (data) {
+                    data = $.parseJSON(data)
+                    DrawMetricChart(data.chartData, containerName)
+                })
                 $('#details-model').modal('toggle');
-
-                //Update chart data for the specific instance found with 'event.target.id'
             });
 
         });
@@ -248,6 +250,51 @@
                 default:
                     return "panel-yellow";
             }
+        }
+
+        function DrawMetricChart(chartData, containerName){
+            console.log(chartData)
+            var ctx = document.getElementById("container-details-chart").getContext('2d');
+            var containerDetailsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.seriesLabels[0],
+                    datasets: [{
+                        label: chartData.labels[0],
+                        data: chartData.dataPoints[0],
+                        backgroundColor: 'rgba(54, 162, 235, 1)',
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1,
+                        fill: false
+                    },{
+                        label: 'Memory Usage',
+                        data: [0,0,1720320,1720320,1431552,1431552,1431552,1431552,1431552,0,0,0,654336,872448,872448,872448,872448,872448,872448,872448,872448,872448,872448,872448,872448,986112,1024000,1024000,1024000,1024000,1024000,1024000,1024000,1024000,1024000,1024000,931840,901120,901120,901120,901120,901120,901120,901120,1124000,1124000,1124000,1124000,1124000,1124000,1124000,1124000,1124000,931840,901120,901120,901120,901120,901120,901120,901120],
+                        backgroundColor: 'rgba(242, 78, 78, 1)',
+                        borderColor: 'rgba(242, 78, 78, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: containerName + " - Metrics"
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero:true
+                            }
+                        }]
+                    }
+                }
+            });
         }
 
         function GetDefaultContainerBox() {
