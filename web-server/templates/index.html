@@ -34,14 +34,15 @@
     <div id="wrapper">
 
         <div id="page-wrapper">
+            
             <div class="row">
                 <div class="col-lg-12">
                     <h1 class="page-header">Dashboard - ACI Events</h1>
                     <button id="sumbit-refresh" class="btn btn-primary mb-2">Refresh</button>
                 </div>
-                <!-- /.col-lg-12 -->
             </div>
 
+            <!-- Form to add work to the queue -->
             <div class="form-inline" style="margin:2rem">
                 <div class="form-group mx-sm-3 mb-2">
                     <label for="input-work" class="sr-only">Add Work</label>
@@ -51,10 +52,10 @@
             </div>
 
             <!-- Container State Section -->
+            <!-- This is populated with a pending/default container group card when 
+                work is added or with the actual container group card -->
             <div id="container-wrapper" class="row"></div>
 
-
-            <!-- Place holder for temp.html -->
 
         </div>
         <!-- /#page-wrapper -->
@@ -62,6 +63,7 @@
     </div>
     <!-- /#wrapper -->
 
+    <!-- Model whos data is replaced depeanding on which container group card is pressed -->
     <div class="modal fade" id="details-model" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog" id="modal-box" role="document">
             <div class="modal-content">
@@ -111,11 +113,11 @@
 
         $(function () {
 
-            //Save the current state of affairs 
+            //Save the current state of container group objects in the DOM
             var current_state = new Map()
 
             
-            // Query homebase for the current state of the instances
+            // Query homebase for the current state of the instances every second
             setInterval(function () {
                 $.get("/currentstate", function (data) {
                     
@@ -137,7 +139,7 @@
                 });
             }, 1000)
 
-            // Add new work to the queue
+            // Add new work to the service bus queue
             $("#sumbit-work").click(function(event){
                 var text = $("#input-work").val()
                 $("#input-work").val('')
@@ -171,6 +173,7 @@
             //Set up model with monitoring metrics for the individule ACI
             $("#container-wrapper").on('click', ".aci-instance", function (event) {
                 containerName = event.target.id.replace("-modal", '')
+                
                 $.get("/api/metrics/" + containerName, function (data) {
                     data = $.parseJSON(data)
                     DrawMetricChart(data.chartData, containerName)
@@ -180,6 +183,8 @@
 
         });
 
+        // When a container state is initalize, Change the pending box to an actual
+        //  container group box with the correct state.
         function UpdateDefaultContainer(containerName, panelState){
             //No default container around, just make a standard one
             if ($(".default-container").length == 0){
@@ -201,6 +206,7 @@
             
         }
 
+        // Convert from the container group state in the DB to the css class
         function ConvertStateToPanel(state){
             switch (state) {
                 case "InProgress":
@@ -212,6 +218,7 @@
             }
         }
 
+        // Draw the chart with the returned chart data
         function DrawMetricChart(chartData, containerName){
             console.log(chartData)
             var ctx = document.getElementById("container-details-chart").getContext('2d');
@@ -257,6 +264,9 @@
             });
         }
 
+        // The default container just says pending, since a container group takes around 7
+        //    seconds to up come, the pending container is a nice placeholder to show that
+        //    things are working. This will be replaced when the container state is updated.
         function GetDefaultContainerBox() {
                 return `<div class="col-lg-2 col-md-2 default-container">
                         <div class="panel panel-yellow">
@@ -281,6 +291,7 @@
                     </div>`
             }
 
+        // Create an actual container group card with actual values. 
         function GetContainerBox(name, panel_state){
             return `<div id="` + name + `" class="col-lg-2 col-md-2">
                         <div class="panel ` + panel_state + `">

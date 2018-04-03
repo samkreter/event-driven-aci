@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from config.config import queueConf, DATABASE_URI, ACI_CONFIG, azure_context
+from config.config import News_api_key, queueConf, DATABASE_URI, ACI_CONFIG, azure_context
 from azure.servicebus import ServiceBusService, Message, Queue
 from azure.monitor import MonitorClient
 from flask import Flask, render_template, request, Response
@@ -8,6 +8,12 @@ import json
 import sys
 from pymongo import MongoClient
 from bson.json_util import dumps
+import requests
+
+
+# TODO: Use Azure's sentiment analysis tool to perform everything
+
+
 
 #The monitor client to get container group metrics
 monitor_client = MonitorClient(azure_context.credentials, azure_context.subscription_id)
@@ -25,6 +31,10 @@ db = client.containerstate
 #Preset respones
 SUCCESS = Response(json.dumps({'success':True}), status=200, mimetype='application/json')
 
+# News api template, find documentation at https://newsapi.org
+NEW_API_URL_TEMPLATE = "https://newsapi.org/v2/everything?q={key_word}&sortBy=publishedAt&apiKey={api_key}&page={page}&pageSize=100"
+
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -32,6 +42,7 @@ def index():
     return render_template('index.html')
 
 
+# Add work to the service bus queue to be picked up by the queue watcher
 @app.route('/sendwork', methods=['POST'])
 def sendwork():
     work = request.get_json()['work']
@@ -42,6 +53,7 @@ def sendwork():
     return SUCCESS
 
 
+# Clear the database of the current state
 @app.route('/clear', methods=['PUT'])
 def clear():
     print("clearing database")
@@ -49,6 +61,7 @@ def clear():
     return SUCCESS
 
 
+# Check the databases for the current state of container groups
 @app.route('/currentstate', methods=['GET'])
 def current_state():
     #Get all container states
@@ -65,12 +78,48 @@ def current_state():
 
     return json.dumps({"container_states": current_states})
 
+
+# Dumb the actual contents of the databases for debugging
 @app.route('/admin/currentdbstate', methods=['GET'])
 def current_db_state():
     db_state = db.containerstate.find({})
     return dumps({"db_state": list(db_state)})
 
 
+# Get a sentiment analysis based on a passed in keyword
+@app.route('/api/sentiment/<key_word>', methods=['GET'])
+def get_sentiment_analysis(key_word):
+    # Get the news articles about the key word from the api
+    articles = _getNewsArticlesWithKeyword(key_word)
+    
+    # Perform sentiment analysis on either the title or description
+    for article in articles:
+        article["title"]
+        article["description"]
+
+    # TODO: Use Azure's sentiment analysis tool to perform everything 
+
+# Need to page through the api response. Only 1000 requests per day so only pull 
+#   4 pages for each key word
+def _getNewsArticlesWithKeyword(key_word):
+    # Get inital first 100 results then use totalResults to find the page splits
+    
+    articles = []
+
+    # NOTE: Depending on the keyword, there might not be 99 pages
+    #   This wont error but just wont return anything
+    for i in [1, 25, 75, 99]:
+        url = NEW_API_URL_TEMPLATE.format(key_word = key_word, api_key = News_api_key, page = i)
+        resp = GetAPIResponse(url)
+        if not resp:
+            return Response(json.dumps({'success':False}), status=500, mimetype='application/json')
+
+        articles.append(resp['articles'])
+
+    return articles
+
+
+# Show the available metrics for the container group, should always be MemoryUsage and CPUUsage
 @app.route('/api/availablemetrics/<container_name>', methods=['GET'])
 def available_metrics(container_name):
     resource_id = (
@@ -86,11 +135,10 @@ def available_metrics(container_name):
     return json.dumps({"available_metrics": available_metrics})
 
 
+# Get the container group metrics for a specific container
 @app.route('/api/metrics/<container_name>', methods=['GET'])
 def get_metrics(container_name):
     metrics = _get_metrics(ACI_CONFIG['subscriptionId'], ACI_CONFIG['resourceGroup'], container_name)
-
-    print(metrics)
 
     return json.dumps({"chartData": metrics})
 
@@ -129,12 +177,31 @@ def _get_metrics(subscription_id, resource_group_name, container_name):
     }
 
 
+# Convert Nones to 0 for graphing correctly
 def NoneZero(val):
     if val is None:
         return 0
     else:
         return val
 
+# Get a json API response
+def GetAPIResponse(url):
+    try:
+        response = requests.get(url)
+    except Exception as e:
+        print('Failed to get from URL: ' + str(e))
+        return False
+
+    if(response == None):
+        print('GetAPIResponse: No Request')
+        return False
+
+    if(response.status_code != 200):
+        print('GetAPIResponse: Non 200 status code of ' +
+                     str(response.status_code))
+        return False
+
+    return response.json()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=80)

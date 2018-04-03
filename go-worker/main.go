@@ -14,11 +14,8 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-/* TODO
-1. Retrive env variables in better way
-2. Set database for the connection string
-*/
-
+// State store the current state of a container group in the mongo database
+// Current states include InProgress and Done
 type State struct {
 	Name  string `json:"name"`
 	State string `json:"sate"`
@@ -36,12 +33,13 @@ func main() {
 		log.Fatal("Env Variable CONTAINER_NAME Not Set.")
 	}
 
+	//Make sure not not have the ssl=true param in the url
 	mongoURI, ok := os.LookupEnv("DATABASE_URI")
 	if !ok {
 		log.Fatal("Env Variable DATABASE_URI Not Set.")
 	}
 
-	//Sanity checks
+	// Sanity checks
 	log.Println("Processing work: ", work)
 	log.Println("Container Name: ", containerName)
 
@@ -50,7 +48,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// //Below part is similar to above.
 	dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
 		return tls.Dial("tcp", addr.String(), &tls.Config{})
 	}
@@ -67,7 +64,7 @@ func main() {
 
 	log.Println("Adding Recored to Databases")
 
-	//Container started the work
+	//Record container started the work
 	err = c.Insert(&State{
 		Name:  containerName,
 		State: "InProgress",
@@ -106,6 +103,6 @@ func main() {
 	time.Sleep(time.Second * 5)
 	stop <- true
 
-	//Finished the work
+	// Record finish work in the database
 	c.Update(bson.M{"name": containerName}, bson.M{"$set": bson.M{"state": "Done"}})
 }

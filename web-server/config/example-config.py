@@ -40,3 +40,6 @@ queueConf = {
       'saskey_value': '',
       'queue_name': ''
 }
+
+# Can get at https://newsapi.org
+News_api_key = ""
