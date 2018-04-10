@@ -38,13 +38,13 @@
     #}
     ```
 
-3. Update the **azuredeploy.parameters.json** in the folder **arm** with the service principal credential created above
+3. Update the **azuredeploy.parameters.json** in the folder **arm** with the service principal credential created above.
 
 4. Deploy the Azure resources with the ARM template.
    ```console
     cd arm
     
-    az group deployment create -g <resource group name> --template-file azuredeploy.json --parameters @azuredeploy.parameters.json
+    az group deployment create --template-file azuredeploy.json --parameters @azuredeploy.parameters.json -g <resource group name>
     ```
     >Note: The output **fqdn** is the URL of the ACI dashboard.
 

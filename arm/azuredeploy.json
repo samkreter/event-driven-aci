@@ -162,7 +162,7 @@
                     "connectionStrings": [
                         {
                             "name": "CosmosDB",
-                            "value": "[concat('mongodb://', variables('cosmosdbName'),':', listKeys(resourceId('Microsoft.DocumentDb/databaseAccounts', variables('cosmosdbName')), '2015-04-08').primaryMasterKey, '@', variables('cosmosdbName'), '.documents.azure.com:10255/?ssl=true&replicaSet=globaldb')]",
+                            "connectionString": "[concat('mongodb://', variables('cosmosdbName'),':', listKeys(resourceId('Microsoft.DocumentDb/databaseAccounts', variables('cosmosdbName')), '2015-04-08').primaryMasterKey, '@', variables('cosmosdbName'), '.documents.azure.com:10255/?replicaSet=globaldb')]",
                             "type": "Custom"
                         }
                     ]
