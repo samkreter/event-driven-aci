@@ -60,7 +60,7 @@
                     <div class="card-content">
                         <span class="card-title">
                             Workers
-                            <a id="sumbit-refresh" href="#" class="waves-effect waves-light btn green">Refresh</a>
+                            <a id="sumbit-refresh" href="#" class="waves-effect waves-light btn red">Clear Database</a>
                         </span>
                         <div id="container-wrapper" class="row">
                             <!--<div class="col s12 m6 l4">
@@ -155,34 +155,38 @@
             //Save the current state of container group objects in the DOM
             var current_state = new Map()
 
-            
-            // Query homebase for the current state of the instances every second
-            setInterval(function () {
-                $.get("/currentstate", function (data) {
-                    
-                    container_states = $.parseJSON(data)['container_states'];
-                    var dic = new Map();
-                    for (var i = 0; i < container_states.length; i++) {
-                        
-                        //Update current state
-                        container_name = container_states[i].name
-                        container_state = container_states[i].state
+            function loadData(){
+                $.ajax({
+                    url:"/currentstate",
+                    success:function (data) {
+                        container_states = $.parseJSON(data)['container_states'];
+                        var dic = new Map();
+                        for (var i = 0; i < container_states.length; i++) {
+                            
+                            //Update current state
+                            container_name = container_states[i].name
+                            container_state = container_states[i].state
 
-                        if(dic[container_name])
-                            continue;
-                        dic[container_name] = true;
+                            if(dic[container_name])
+                                continue;
+                            dic[container_name] = true;
 
-                        if (current_state.has(container_name)){
-                            var state = current_state.get(container_name);
-                            $("#"+container_name + " ." + state).removeClass(state).addClass(ConvertStateToPanel(container_state))
+                            if (current_state.has(container_name)){
+                                var state = current_state.get(container_name);
+                                $("#"+container_name + " ." + state).removeClass(state).addClass(ConvertStateToPanel(container_state))
+                            }
+                            else{
+                                UpdateDefaultContainer(container_name, ConvertStateToPanel(container_state))
+                                current_state.set(container_name, ConvertStateToPanel(container_state))
+                            }
                         }
-                        else{
-                            UpdateDefaultContainer(container_name, ConvertStateToPanel(container_state))
-                            current_state.set(container_name, ConvertStateToPanel(container_state))
-                        }
+                    },
+                    complete:function(){
+                        setTimeout(loadData,1000);
                     }
                 });
-            }, 1000)
+            }
+            loadData();
 
             // Add new work to the service bus queue
             $("#sumbit-work").click(function(event){
@@ -224,12 +228,14 @@
 
                 $.get("/api/metrics/" + containerName, function (data) {
                     $('#loading').hide();
-                    data = $.parseJSON(data)
-                    DrawMetricChart(data.chartData, containerName)
+                    data = $.parseJSON(data);
+                    DrawMetricChart(data.chartData, containerName);
                 })
-                
+                                
                 clearCanvas("container-cpu-chart");
                 clearCanvas("container-memory-chart");
+                var emptyChartData = {"seriesLabels":[["00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00"],["00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00","00:00:00"]],"labels":["CPU Usage","Memory Usage"],"dataPoints":[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]};
+                DrawMetricChart(emptyChartData,containerName);
             });
 
         });
@@ -269,7 +275,6 @@
 
         // Draw the chart with the returned chart data
         function DrawMetricChart(chartData, containerName){
-            console.log(chartData)
             var ctx = document.getElementById("container-cpu-chart").getContext('2d');
             var containerDetailsChart = new Chart(ctx, {
                 type: 'line',
@@ -309,7 +314,7 @@
             var containerDetailsChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: chartData.seriesLabels[0],
+                    labels: chartData.seriesLabels[1],
                     datasets: [{
                         label: chartData.labels[1],
                         data: chartData.dataPoints[1],
