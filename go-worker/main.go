@@ -79,30 +79,41 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//Perfom some hashing as work
-	stop := make(chan bool)
+	for i := 0; i < 200; i++ {
+		go dowork(work)
+	}
 
-	go func() {
-		hash := md5.New()
+	hash := md5.New()
 
-		t := []byte("test")
-		for {
-			select {
-			case <-stop:
-				return
-			default:
-				time.Sleep(time.Second * 1)
-				for i := 0; i < 20; i++ {
-					t = hash.Sum(t)
-					fmt.Printf("%x\n", t)
-				}
-			}
-		}
-	}()
+	t := []byte(work)
 
-	time.Sleep(time.Second * 5)
-	stop <- true
+	for i := 0; i < 100; i++ {
+		t = hash.Sum(t)
+		fmt.Printf("%x\n", t)
+	}
+
+	output := fmt.Sprintf("Hello World!\nOriginal String: %s\n\nEncrypted String:\n%x\n", work, t)
 
 	// Record finish work in the database
-	c.Update(bson.M{"name": containerName}, bson.M{"$set": bson.M{"state": "Done"}})
+	c.Update(bson.M{"name": containerName}, bson.M{"$set": bson.M{"state": "Done", "output": output}})
+
+	time.Sleep(time.Minute * 5)
+}
+
+func dowork(work string) {
+	hash := md5.New()
+
+	t := []byte(work)
+
+	for i := 0; i < 100; i++ {
+		t = hash.Sum(t)
+		fmt.Printf("%x\n", t)
+	}
+
+	time.Sleep(time.Second * 1)
+
+	for i := 0; i < 100; i++ {
+		t = hash.Sum(t)
+		fmt.Printf("%x\n", t)
+	}
 }

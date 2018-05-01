@@ -6,7 +6,7 @@ COPY . /go/src/github.com/samkreter/event-driven-aci
 # RUN go test ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o worker .
 
-FROM alpine:latest
+FROM bash:latest
 RUN apk --update add ca-certificates
 WORKDIR /root/
 COPY --from=builder /go/src/github.com/samkreter/event-driven-aci .

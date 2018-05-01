@@ -1,6 +1,6 @@
 brun:
 	docker build -t pskreter/web-server:latest .
-	docker run --rm -p 8000:8000  pskreter/web-server:latest
+	docker run --rm -p 8000:80  pskreter/web-server:latest
 
 build: 
 	docker build -t pskreter/web-server:latest .
